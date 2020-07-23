@@ -22,7 +22,7 @@ def open_selenium_browser(nickname, website):
 def close_selenium(name, slnm):
     print('Data has been scraped & saved')
     slnm.close()
-    print('----------' + name + 'Complete----------')
+    print('----------' + name + ' Complete----------')
 
 
 # Scrape IMoovA.com and clean data -- No inputs, creates CSV, & returns data frame
@@ -94,6 +94,7 @@ def scrape_elmonte():
     # Clean up data
     elmonte['Earliest Pick Up'] = [' '.join(pickup.split('-')[:-1]) for pickup in elmonte['Earliest Pick Up']]
     elmonte['Latest Drop Off'] = [' '.join(pickup.split('-')[:-1]) for pickup in elmonte['Latest Drop Off']]
+    elmonte = elmonte[~elmonte.RVs.str.contains('none')]
 
     # Add link to RV info and order info
     rvs_url = 'https://www.elmonterv.com/rv-rental/rvs-we-rent/'
@@ -120,7 +121,7 @@ def google_maps(df):
     return df
 
 
-# (1) Scrape data from various websites. (2) Stitch the data together. (3) Store data in Google Sheets.
+# (1) Scrape websites. (2) Stitch the data together. (3) Store data in CSV backed up to Google Drive.
 def main():
     # Scrape websites, storing results in a dictionary. Keys = site names. Elements = data frames.
     scraped_data = {
@@ -129,14 +130,20 @@ def main():
     }
 
     # Stitch data together
-    relocations = pd.concat(scraped_data.values(), keys=scraped_data.keys())
+    relocations = pd.concat(scraped_data.values(), keys=scraped_data.keys(), names=['Website'])
     relocations = google_maps(relocations)          # Add google maps link
 
     # Rearrange columns
     columns = ['From', 'To', 'Rate', 'Earliest Pick Up', 'Latest Drop Off', 'RV Type', 'Days Allowed',
                'Extra Days', 'RVs', 'Miles Included', 'Bonus', 'Google Maps', 'More Info', 'Order']
     relocations = relocations[columns]
-    relocations.to_csv('C:\\Users\\rcdodds\\Google Drive\\Travel\\RV Relocation Deals.csv')
+
+    # Store in file which is automatically backed up to Google Drive (and can be shared)
+    path = 'C:\\Users\\rcdodds\\Google Drive\\Travel\\RV Relocation Deals.csv'
+    print('Saving data to ' + path)
+    relocations.to_csv(path, index=False)
+    print('Data saved to ' + path)
+    print('----------Program Complete----------')
 
 
 # Let's get it going
