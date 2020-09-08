@@ -1,6 +1,9 @@
 import pandas as pd
+import numpy as np
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+import openpyxl
 
 
 # Open a Selenium browser while printing status updates. Return said browser for use in scraping.
@@ -9,8 +12,7 @@ def open_selenium_browser(nickname, website):
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     print('Opening Selenium browser')
-    driver_path = 'C:\\Users\\rcdodds\\Documents\\chromedriver_win32\\chromedriver.exe'
-    sele = webdriver.Chrome(executable_path=driver_path, options=chrome_options)
+    sele = webdriver.Chrome(ChromeDriverManager().install())
     print('Selenium browser opened')
     print('Opening ' + nickname)
     sele.get(website)
@@ -75,7 +77,8 @@ def scrape_imoova():
 # Scrape ElMonteRV.com and clean data -- No inputs, creates CSV, & returns data frame
 def scrape_elmonte():
     # Start a selenium browser
-    driver = open_selenium_browser('ElMonteRV.com', 'https://www.elmonterv.com/rv-rental/cool-deal-detail/ONE-WAY-SPECIAL-/')
+    driver = open_selenium_browser('ElMonteRV.com',
+                                   'https://www.elmonterv.com/rv-rental/cool-deal-detail/ONE-WAY-SPECIAL-/')
 
     # Store each row of the table as a selenium element
     print('Scraping data')
@@ -84,8 +87,10 @@ def scrape_elmonte():
     # Scrape each table row
     cell_texts = []
     for row in rows[2:-1]:
-        cell_texts.append([" ".join(cll.text.split()).replace(',', '') for cll in row.find_elements_by_css_selector('td')])
-        cell_texts[-1][-1] = cell_texts[-1][-1] + ' fuel credit'
+        cell_texts.append(
+            [" ".join(cll.text.split()).replace(',', '') for cll in row.find_elements_by_css_selector('td')])
+        if len(cell_texts[-1][-1]):
+            cell_texts[-1][-1] = cell_texts[-1][-1] + ' fuel credit'
 
     # Convert the list of lists to a data frame and export to CSV
     cols = ['From', 'To', 'Earliest Pick Up', 'Latest Drop Off', 'RV Type', 'RVs', 'Rate', 'Miles Included', 'Bonus']
@@ -94,14 +99,20 @@ def scrape_elmonte():
     # Clean up data
     elmonte['Earliest Pick Up'] = [' '.join(pickup.split('-')[:-1]) for pickup in elmonte['Earliest Pick Up']]
     elmonte['Latest Drop Off'] = [' '.join(pickup.split('-')[:-1]) for pickup in elmonte['Latest Drop Off']]
-    elmonte = elmonte[~elmonte.RVs.str.contains('none')]
+    elmonte = elmonte[~elmonte.RVs.str.contains('none')]    # Get rid of listings with no remaining RVs
+    elmonte['From'].replace('', np.nan, inplace=True)       # Replace blank pick up spots with null value
+    elmonte.dropna(subset=['From'], inplace=True)           # Drop rows with null pick up spots
 
     # Add link to RV info and order info
     rvs_url = 'https://www.elmonterv.com/rv-rental/rvs-we-rent/'
     driver.get(rvs_url)
     rv_links = []
     for rv in elmonte['RV Type']:
-        rv_links.append(driver.find_element_by_partial_link_text(rv).get_attribute('href'))
+        try:
+            rv_links.append(driver.find_element_by_partial_link_text(rv).get_attribute('href'))
+        except:
+            print('RV Type Not Found - ' + rv)
+            rv_links.append('Not Found')
     elmonte['More Info'] = rv_links
     elmonte['Order'] = ['Email reservations@elmonterv.com and mention FRDS.' for i in range(len(elmonte))]
 
@@ -116,7 +127,8 @@ def google_maps(df):
     for offer in range(len(df)):
         origin = df['From'][offer].replace(' ', '+')
         dest = df['To'][offer].replace(' ', '+')
-        gmaps.append('https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=' + origin + '&destination=' + dest)
+        gmaps.append(
+            'https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=' + origin + '&destination=' + dest)
     df['Google Maps'] = gmaps
     return df
 
@@ -131,7 +143,7 @@ def main():
 
     # Stitch data together
     relocations = pd.concat(scraped_data.values(), keys=scraped_data.keys(), names=['Website'])
-    relocations = google_maps(relocations)          # Add google maps link
+    relocations = google_maps(relocations)  # Add google maps link
 
     # Rearrange columns
     columns = ['From', 'To', 'Rate', 'Earliest Pick Up', 'Latest Drop Off', 'RV Type', 'Days Allowed',
@@ -139,9 +151,9 @@ def main():
     relocations = relocations[columns]
 
     # Store in file which is automatically backed up to Google Drive (and can be shared)
-    path = 'C:\\Users\\rcdodds\\Google Drive\\Travel\\RV Relocation Deals.csv'
+    path = 'C:\\Users\\rcdodds\\Google Drive\\Travel\\RV Relocation Deals.xlsx'
     print('Saving data to ' + path)
-    relocations.to_csv(path, index=False)
+    relocations.to_excel(path, index=False)
     print('Data saved to ' + path)
     print('----------Program Complete----------')
 
