@@ -10,9 +10,9 @@ import openpyxl
 def open_selenium_browser(nickname, website):
     print('----------Scraping ' + nickname + '----------')
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    chrome_options.headless = True
     print('Opening Selenium browser')
-    sele = webdriver.Chrome(ChromeDriverManager().install())
+    sele = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
     print('Selenium browser opened')
     print('Opening ' + nickname)
     sele.get(website)
