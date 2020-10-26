@@ -64,9 +64,12 @@ def scrape_imoova():
     # Add miles allowance column
     miles = []
     for page in imoova['More Info']:
-        browser.get(page)
-        more_info = [box.text.replace(',', '') for box in browser.find_elements_by_css_selector('td')]
-        miles.append(more_info[more_info.index('Miles allowance:') + 1])
+        try:    # Attempt to pull the number of miles allowed
+            browser.get(page)
+            more_info = [box.text.replace(',', '') for box in browser.find_elements_by_css_selector('td')]
+            miles.append(more_info[more_info.index('Miles allowance:') + 1])
+        except ValueError:
+            miles.append('??')      # Couldn't find miles allowed
     imoova['Miles Included'] = miles
 
     # Done
