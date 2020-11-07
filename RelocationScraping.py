@@ -90,13 +90,17 @@ def scrape_elmonte():
     # Scrape each table row
     cell_texts = []
     for row in rows[2:-1]:
-        cell_texts.append(
-            [" ".join(cll.text.split()).replace(',', '') for cll in row.find_elements_by_css_selector('td')])
+        # Scrape each cell
+        cells = row.find_elements_by_css_selector('td')
+        # Store relevant data
+        cell_texts.append([" ".join(cll.text.split()).replace(',', '') for cll in cells])
+        # Specify fuel credit if necessary
         if len(cell_texts[-1][-1]):
             cell_texts[-1][-1] = cell_texts[-1][-1] + ' fuel credit'
 
     # Convert the list of lists to a data frame and export to CSV
-    cols = ['From', 'To', 'Earliest Pick Up', 'Latest Drop Off', 'RV Type', 'RVs', 'Rate', 'Miles Included', 'Bonus']
+    cols = ['From', 'To', 'Earliest Pick Up', 'Latest Drop Off', 'RV Type',
+            'RVs', 'Rate', 'Days Allowed', 'Miles Included', 'Bonus']
     elmonte = pd.DataFrame(cell_texts, columns=cols)
 
     # Clean up data
