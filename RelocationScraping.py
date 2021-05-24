@@ -83,13 +83,13 @@ def scrape_elmonte():
     driver = open_selenium_browser('ElMonteRV.com',
                                    'https://www.elmonterv.com/rv-rental/cool-deal-detail/ONE-WAY-SPECIAL/')
 
-    # Store each row of the table as a selenium element
+    # Store each row of the table as a selenium element. Skip over table of airport codes
     print('Scraping data')
-    rows = driver.find_elements_by_css_selector('tr')
+    rows = driver.find_elements_by_xpath('//div/div[1]/table[2]/tbody/tr')
 
     # Scrape each table row
     cell_texts = []
-    for row in rows[2:-1]:
+    for row in rows[1:-1]:
         # Scrape each cell
         cells = row.find_elements_by_css_selector('td')
         # Store relevant data
@@ -98,7 +98,7 @@ def scrape_elmonte():
         if len(cell_texts[-1][-1]):
             cell_texts[-1][-1] = cell_texts[-1][-1] + ' fuel credit'
 
-    # Convert the list of lists to a data frame and export to CSV
+    # Convert the list of lists to a data frame
     cols = ['From', 'To', 'Earliest Pick Up', 'Latest Drop Off', 'RV Type',
             'RVs', 'Rate', 'Days Allowed', 'Miles Included', 'Bonus']
     elmonte = pd.DataFrame(cell_texts, columns=cols)
