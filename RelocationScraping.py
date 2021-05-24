@@ -10,7 +10,7 @@ import openpyxl
 def open_selenium_browser(nickname, website):
     print('----------Scraping ' + nickname + '----------')
     chrome_options = Options()
-    chrome_options.headless = True
+    chrome_options.headless = False
     print('Opening Selenium browser')
     sele = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
     print('Selenium browser opened')
@@ -30,7 +30,7 @@ def close_selenium(name, slnm):
 # Scrape IMoovA.com and clean data -- No inputs, creates CSV, & returns data frame
 def scrape_imoova():
     # Start a selenium browser & navigate to IMoovA.com (USA tab)
-    browser = open_selenium_browser('IMoovA.com', 'https://www.imoova.com/imoova/relocations?region_id=3')
+    browser = open_selenium_browser('IMoovA.com', 'https://imoova.com/imoova/relocations?region_id=3')
 
     # Store each row of the table as a selenium element
     table_rows = browser.find_elements_by_xpath('//*[@id="dataTable"]/tbody/tr')
@@ -81,7 +81,7 @@ def scrape_imoova():
 def scrape_elmonte():
     # Start a selenium browser
     driver = open_selenium_browser('ElMonteRV.com',
-                                   'https://www.elmonterv.com/rv-rental/cool-deal-detail/ONE-WAY-SPECIAL-/')
+                                   'https://www.elmonterv.com/rv-rental/cool-deal-detail/ONE-WAY-SPECIAL/')
 
     # Store each row of the table as a selenium element
     print('Scraping data')
@@ -109,6 +109,8 @@ def scrape_elmonte():
     elmonte = elmonte[~elmonte.RVs.str.contains('none')]    # Get rid of listings with no remaining RVs
     elmonte['From'].replace('', np.nan, inplace=True)       # Replace blank pick up spots with null value
     elmonte.dropna(subset=['From'], inplace=True)           # Drop rows with null pick up spots
+    elmonte['Earliest Pick Up'].replace('', np.nan, inplace=True)       # Replace blank pick up dates with null value
+    elmonte.dropna(subset=['Earliest Pick Up'], inplace=True)           # Drop rows with null pick up dates
 
     # Add link to RV info and order info
     rvs_url = 'https://www.elmonterv.com/rv-rental/rvs-we-rent/'
