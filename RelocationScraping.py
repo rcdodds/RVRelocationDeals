@@ -85,7 +85,7 @@ def scrape_elmonte():
 
     # Store each row of the table as a selenium element. Skip over table of airport codes
     print('Scraping data')
-    rows = driver.find_elements_by_xpath('//div/div[1]/table[2]/tbody/tr')
+    rows = driver.find_elements_by_xpath('//div/div[1]/table[1]/tbody/tr')
 
     # Scrape each table row
     cell_texts = []
